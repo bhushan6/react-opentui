@@ -4,8 +4,11 @@ import {
   BoxRenderable,
   GroupRenderable,
   InputRenderable,
-  RGBA,
-  type Position,
+  type TextOptions,
+  type BoxOptions,
+  type RenderableOptions,
+  type InputRenderableOptions,
+  InputRenderableEvents,
 } from "@opentui/core";
 import Reconciler from "react-reconciler";
 
@@ -13,150 +16,134 @@ interface HostContext {
   renderer: CliRenderer;
 }
 
+type BaseElementProps = {
+  id?: string;
+};
+
+interface InputEventHandlers {
+  onInput?: (value: string) => void;
+  onChange?: (value: string) => void;
+  onEnter?: (value: string) => void;
+}
+
+type OpenTUIElementProps<TProps, TRef> = TProps &
+  BaseElementProps &
+  React.Attributes & {
+    key?: React.Key;
+    ref?: React.Ref<TRef>;
+    children?: React.ReactNode;
+  };
+
+type InputElementProps = OpenTUIElementProps<
+  InputRenderableOptions & InputEventHandlers,
+  InputRenderable
+>;
+
+// Clean JSX declaration using React's core types
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      textRenderable: OpenTUIElementProps<TextOptions, TextRenderable>;
+      boxRenderable: OpenTUIElementProps<BoxOptions, BoxRenderable>;
+      inputRenderable: InputElementProps;
+      groupRenderable: OpenTUIElementProps<RenderableOptions, GroupRenderable>;
+    }
+  }
+}
+
+type OpenTUIElementTagName =
+  | "textRenderable"
+  | "boxRenderable"
+  | "inputRenderable"
+  | "groupRenderable";
+
 type OpenTUIElement =
   | TextRenderable
   | BoxRenderable
   | GroupRenderable
   | InputRenderable;
 
-interface ElementProps {
-  // Common props
-  id?: string;
-  x?: number;
-  y?: number;
-  width?: number | "auto";
-  height?: number | "auto";
-  visible?: boolean;
-  position?: "absolute" | "relative";
+// Strict discriminated union for element props
+type ElementProps =
+  | (RenderableOptions & BaseElementProps)
+  | (TextOptions & BaseElementProps)
+  | (BoxOptions & BaseElementProps)
+  | (InputRenderableOptions & BaseElementProps & InputEventHandlers);
 
-  // Box props
-  backgroundColor?: string | RGBA;
-  borderColor?: string | RGBA;
-  borderStyle?: string;
-  border?: boolean;
-
-  // Text props
-  content?: string;
-  fg?: string | RGBA;
-  bg?: string | RGBA;
-  selectable?: boolean;
-
-  // Input props
-  placeholder?: string;
-  value?: string;
-  maxLength?: number;
-  textColor?: string | RGBA;
-  focusedBackgroundColor?: string | RGBA;
-  focusedTextColor?: string | RGBA;
-
-  // Event handlers
-  onInput?: (value: string) => void;
-  onChange?: (value: string) => void;
-  onEnter?: (value: string) => void;
-  onSelectionChanged?: (index: number, option: any) => void;
-  onItemSelected?: (index: number, option: any) => void;
+function applyTextProps(instance: TextRenderable, props: TextOptions) {
+  // Apply all TextOptions properties
+  Object.assign(instance, props);
+  return instance;
 }
 
-// Helper function to apply common properties
-function applyCommonProps(instance: OpenTUIElement, props: ElementProps): void {
-  // TODO : handle this bit more gracefully
-  if (props.x !== undefined) instance.x = props.x;
-  if (props.y !== undefined) instance.y = props.y;
-  if (props.width !== undefined) instance.width = props.width;
-  if (props.height !== undefined) instance.height = props.height;
-  if (props.visible !== undefined) instance.visible = props.visible;
-  if (props.position !== undefined)
-    instance.setPosition(props.position as Position);
-  if (props.borderStyle !== undefined) {
-    //@ts-expect-error
-    instance.borderStyle = props.borderStyle;
-  }
-  if (props.borderColor !== undefined) {
-    //@ts-expect-error
-    instance.borderColor = props.borderColor;
-  }
+function applyBoxProps(instance: BoxRenderable, props: BoxOptions) {
+  // Apply all BoxOptions properties
+  Object.assign(instance, props);
+  return instance;
 }
 
-// Helper function to apply Box-specific properties
-function applyBoxProps(instance: BoxRenderable, props: ElementProps): void {
-  if (props.backgroundColor !== undefined) {
-    instance.backgroundColor = props.backgroundColor;
-  }
-  if (props.borderColor !== undefined) {
-    instance.borderColor = props.borderColor;
-  }
+function applyInputProps(
+  instance: InputRenderable,
+  props: InputRenderableOptions
+) {
+  // Apply all InputRenderableOptions properties
+  Object.assign(instance, props);
+  return instance;
 }
 
-// Helper function to apply Text-specific properties
-function applyTextProps(instance: TextRenderable, props: ElementProps): void {
-  if (props.content !== undefined) {
-    instance.content = props.content;
-  }
-  if (props.fg !== undefined) {
-    instance.fg = props.fg;
-  }
-  if (props.bg !== undefined) {
-    instance.bg = props.bg;
-  }
-  if (props.selectable !== undefined) {
-    instance.selectable = props.selectable;
-  }
+function applyGroupProps(instance: GroupRenderable, props: RenderableOptions) {
+  // Apply all RenderableOptions properties
+  Object.assign(instance, props);
+  return instance;
 }
 
-// Helper function to apply Input-specific properties
-function applyInputProps(instance: InputRenderable, props: ElementProps): void {
-  if (props.placeholder !== undefined) {
-    instance.placeholder = props.placeholder;
-  }
-  if (props.value !== undefined) {
-    instance.value = props.value;
-  }
-  if (props.maxLength !== undefined) {
-    instance.maxLength = props.maxLength;
-  }
-  if (props.textColor !== undefined) {
-    instance.textColor = props.textColor;
-  }
-  if (props.focusedBackgroundColor !== undefined) {
-    instance.focusedBackgroundColor = props.focusedBackgroundColor;
-  }
-  if (props.focusedTextColor !== undefined) {
-    instance.focusedTextColor = props.focusedTextColor;
-  }
-}
+// function applyElementProps(
+//   instance: OpenTUIElement,
+//   props: ElementProps
+// ): void {
+//   if (isTextProps(props) && instance instanceof TextRenderable) {
+//     applyTextProps(instance, props);
+//   } else if (isBoxProps(props) && instance instanceof BoxRenderable) {
+//     applyBoxProps(instance, props);
+//   } else if (isInputProps(props) && instance instanceof InputRenderable) {
+//     applyInputProps(instance, props);
+//   } else if (isGroupProps(props) && instance instanceof GroupRenderable) {
+//     applyGroupProps(instance, props);
+//   }
+// }
 
 // Helper function to setup event listeners
 function setupEventListeners(
-  instance: OpenTUIElement,
-  props: ElementProps
+  instance: InputRenderable,
+  props: InputRenderableOptions & BaseElementProps & InputEventHandlers
 ): void {
   if (instance instanceof InputRenderable) {
     if (props.onInput) {
-      instance.on("input", props.onInput);
+      instance.on(InputRenderableEvents.INPUT, props.onInput);
     }
     if (props.onChange) {
-      instance.on("change", props.onChange);
+      instance.on(InputRenderableEvents.CHANGE, props.onChange);
     }
     if (props.onEnter) {
-      instance.on("enter", props.onEnter);
+      instance.on(InputRenderableEvents.ENTER, props.onEnter);
     }
   }
 }
 
 // Helper function to clean up event listeners
 function cleanupEventListeners(
-  instance: OpenTUIElement,
-  props: ElementProps
+  instance: InputRenderable,
+  props: InputRenderableOptions & BaseElementProps & InputEventHandlers
 ): void {
   if (instance instanceof InputRenderable) {
     if (props.onInput) {
-      instance.off("input", props.onInput);
+      instance.off(InputRenderableEvents.INPUT, props.onInput);
     }
     if (props.onChange) {
-      instance.off("change", props.onChange);
+      instance.off(InputRenderableEvents.CHANGE, props.onChange);
     }
     if (props.onEnter) {
-      instance.off("enter", props.onEnter);
+      instance.off(InputRenderableEvents.ENTER, props.onEnter);
     }
   }
 }
@@ -189,7 +176,7 @@ const reconciler = Reconciler({
 
   // Instance creation
   createInstance(
-    type: string,
+    type: OpenTUIElementTagName,
     props: ElementProps,
     rootContainer: HostContext,
     hostContext: HostContext,
@@ -201,70 +188,31 @@ const reconciler = Reconciler({
     let instance: OpenTUIElement;
 
     switch (type) {
-      case "box":
-        instance = new BoxRenderable(id || "box", {
-          position: props.position || "absolute",
-          left: props.x ?? 0,
-          top: props.y ?? 0,
-          width: props.width ?? 20,
-          height: props.height ?? 10,
-          backgroundColor:
-            props.backgroundColor || RGBA.fromInts(20, 20, 40, 255),
-          borderColor: props.borderColor || RGBA.fromInts(255, 255, 255, 255),
-        });
-        applyBoxProps(instance as BoxRenderable, props);
+      case "boxRenderable":
+        instance = applyBoxProps(new BoxRenderable(id || "box", {}), props);
         break;
 
-      case "group":
-        instance = new GroupRenderable(id || "group", {
-          position: props.position || "relative",
-          left: props.x ?? 0,
-          top: props.y ?? 0,
-          width: props.width ?? "auto",
-          height: props.height ?? "auto",
-        });
+      case "groupRenderable":
+        instance = applyGroupProps(
+          new GroupRenderable(id || "group", {}),
+          props
+        );
         break;
 
-      case "text":
-        instance = new TextRenderable(id || "text", {
-          content: props.content || "",
-          fg: props.fg,
-          bg: props.bg,
-          selectable: props.selectable ?? true,
-          position: props.position || "relative",
-          left: props.x ?? 0,
-          top: props.y ?? 0,
-          width: props.width ?? "auto",
-          height: props.height ?? "auto",
-        });
+      case "textRenderable":
+        instance = applyTextProps(new TextRenderable(id || "text", {}), props);
         break;
 
-      case "input":
-        instance = new InputRenderable(id || "input", {
-          position: props.position || "relative",
-          left: props.x ?? 0,
-          top: props.y ?? 0,
-          width: props.width ?? 20,
-          height: props.height ?? 3,
-          placeholder: props.placeholder,
-          value: props.value,
-          maxLength: props.maxLength,
-          textColor: props.textColor,
-          focusedBackgroundColor: props.focusedBackgroundColor,
-          focusedTextColor: props.focusedTextColor,
-        });
+      case "inputRenderable":
+        instance = applyInputProps(
+          new InputRenderable(id || "input", {}),
+          props
+        );
+        setupEventListeners(instance as InputRenderable, props);
         break;
       default:
         throw new Error(`Unknown element type: ${type}`);
     }
-
-    cleanupEventListeners(instance, props);
-
-    // Apply common properties
-    applyCommonProps(instance, props);
-
-    // Setup event listeners
-    setupEventListeners(instance, props);
 
     return instance;
   },
@@ -295,10 +243,6 @@ const reconciler = Reconciler({
     rootContainer: HostContext,
     hostContext: HostContext
   ): ElementProps | null {
-    // console.log("prepareUpdate", type, { oldProps, newProps });
-
-    // Compare props and return new props if different
-    // const hasChanges = JSON.stringify(oldProps) !== JSON.stringify(newProps);
     return newProps;
   },
 
@@ -339,12 +283,6 @@ const reconciler = Reconciler({
     child: OpenTUIElement | null
   ): void {
     if (parentInstance && child) {
-      console.log(
-        "appendChild",
-        parentInstance.constructor.name,
-        "->",
-        child.constructor.name
-      );
       parentInstance.add(child);
     }
   },
@@ -354,13 +292,6 @@ const reconciler = Reconciler({
     child: OpenTUIElement | null
   ): void {
     if (parentInstance && child) {
-      console.log(
-        "appendInitialChild",
-        parentInstance.constructor.name,
-        "->",
-        child.constructor.name
-      );
-
       parentInstance.add(child);
     }
   },
@@ -370,7 +301,6 @@ const reconciler = Reconciler({
     child: OpenTUIElement | null
   ): void {
     if (container.renderer?.root && child) {
-      console.log("appendChildToContainer", child.constructor.name);
       container.renderer.root.add(child);
     }
   },
@@ -380,12 +310,6 @@ const reconciler = Reconciler({
     child: OpenTUIElement | null
   ): void {
     if (parentInstance && child) {
-      console.log(
-        "removeChild",
-        child.constructor.name,
-        "from",
-        parentInstance.constructor.name
-      );
       parentInstance.remove(child.id);
       child.destroy(); // Clean up the child instance
     }
@@ -396,10 +320,8 @@ const reconciler = Reconciler({
     child: OpenTUIElement | null
   ): void {
     if (container.renderer?.root && child) {
-      //   console.log("removeChildFromContainer", child.constructor.name);
-      //   container.renderer.root.remove(child);
       container.renderer.root.remove(child.id);
-      child.destroy(); // Clean up the child instance
+      child.destroy();
     }
   },
 
@@ -409,13 +331,6 @@ const reconciler = Reconciler({
     beforeChild: OpenTUIElement | null
   ): void {
     if (parentInstance && child) {
-      console.log(
-        "insertBefore",
-        child.constructor.name,
-        "before",
-        beforeChild?.constructor.name
-      );
-      // For now, just append - OpenTUI might not support insertion at specific index
       const index =
         beforeChild && parentInstance.getChildren().indexOf(beforeChild);
 
@@ -427,33 +342,31 @@ const reconciler = Reconciler({
   commitUpdate(
     instance: OpenTUIElement,
     updatePayload: ElementProps,
-    type: string,
+    type: OpenTUIElementTagName,
     prevProps: ElementProps,
     nextProps: ElementProps
   ): void {
     // console.log("commitUpdate", type, { prevProps, nextProps });
 
-    // Clean up old event listeners
-    // cleanupEventListeners(instance, prevProps);
-
-    // Apply common properties
-    applyCommonProps(instance, nextProps);
-
     // Apply type-specific properties
     switch (type) {
-      case "box":
+      case "boxRenderable":
         applyBoxProps(instance as BoxRenderable, nextProps);
         break;
-      case "text":
+      case "textRenderable":
         applyTextProps(instance as TextRenderable, nextProps);
         break;
-      case "input":
-        applyInputProps(instance as InputRenderable, nextProps);
+      case "inputRenderable":
+        const inputInstance = instance as InputRenderable;
+        applyInputProps(inputInstance, nextProps);
+        setupEventListeners(inputInstance, nextProps);
         break;
+      case "groupRenderable":
+        applyGroupProps(instance as GroupRenderable, nextProps);
+        break;
+      default:
+        throw new Error(`Unknown element type: ${type}`);
     }
-
-    // Setup new event listeners
-    // setupEventListeners(instance, nextProps);
   },
 
   commitTextUpdate(textInstance: null, oldText: string, newText: string): void {
@@ -506,11 +419,7 @@ const render = async (element: React.ReactNode, rendererRoot: CliRenderer) => {
 
   try {
     renderer = rendererRoot;
-
-    // console.log("CliRenderer created successfully");
-
     const hostContext: HostContext = { renderer };
-
     // Use legacy root for now to avoid React 18 complexities
     reconcilerContainer = reconciler.createContainer(
       hostContext,

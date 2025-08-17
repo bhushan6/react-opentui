@@ -1,4 +1,3 @@
-//@ts-nocheck
 import {
   bold,
   createCliRenderer,
@@ -6,13 +5,16 @@ import {
   getKeyHandler,
   RGBA,
   t,
+  TextRenderable,
   type ParsedKey,
 } from "@opentui/core";
 import { createRoot } from "./lib";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Counter = () => {
   const [count, setCount] = useState(0);
+
+  const ref = useRef<TextRenderable>(null);
 
   useEffect(() => {
     function handleKeyPress(key: ParsedKey): void {
@@ -41,23 +43,25 @@ const Counter = () => {
   }, []);
 
   return (
-    <group id="counter-group">
-      <text
+    <groupRenderable id="counter-group" margin={2}>
+      <textRenderable
+        ref={ref}
         id="counter"
         content={t`${bold(
           fg(`${count > 0 ? "#00ff00" : count < 0 ? "#ff4444" : "#ffffff"}`)(
             `${count}`
           )
         )}`}
+        width={ref.current?.content.length || 1}
       />
-    </group>
+    </groupRenderable>
   );
 };
 
 const App = () => {
   return (
     <>
-      <box
+      <boxRenderable
         id="main-box"
         left={50}
         top={3}
@@ -70,31 +74,39 @@ const App = () => {
         borderColor={RGBA.fromInts(100, 10, 255, 255)}
         borderStyle="double"
       >
-        <group
+        <groupRenderable
           id="group1"
           width={50}
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
         >
-          <text
+          <textRenderable
             id="t1"
             content={t`${bold(fg("hotpink")("Hello OpenTUI!"))}`}
-            borderColor={RGBA.fromInts(100, 150, 255, 255)}
-            borderStyle="double"
+            bg={RGBA.fromInts(10, 15, 25, 255)}
           />
-          <text
+          <textRenderable
             id={"t2"}
             content={t`${bold(fg("#64b5f6")("OpenTUI + React"))}`}
           />
           <Counter />
-        </group>
-        <group id="instructions-group">
-          <text id="instr1" content={t`${fg("#bbbbbb")("↑/+ : Increment")}`} />
-          <text id="instr2" content={t`${fg("#bbbbbb")("↓/- : Decrement")}`} />
-          <text id="instr3" content={t`${fg("#bbbbbb")("R   : Reset")}`} />
-        </group>
-      </box>
+        </groupRenderable>
+        <groupRenderable id="instructions-group">
+          <textRenderable
+            id="instr1"
+            content={t`${fg("#bbbbbb")("↑/+ : Increment")}`}
+          />
+          <textRenderable
+            id="instr2"
+            content={t`${fg("#bbbbbb")("↓/- : Decrement")}`}
+          />
+          <textRenderable
+            id="instr3"
+            content={t`${fg("#bbbbbb")("R   : Reset")}`}
+          />
+        </groupRenderable>
+      </boxRenderable>
     </>
   );
 };
@@ -103,6 +115,7 @@ createCliRenderer({
   exitOnCtrlC: true,
   targetFps: 30,
 }).then((renderer) => {
+  // renderer.console.show();
   renderer.setBackgroundColor(RGBA.fromInts(10, 15, 35, 255));
   createRoot().render(<App />, renderer);
 });
